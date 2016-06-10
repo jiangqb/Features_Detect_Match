@@ -12,22 +12,23 @@ int main(){
 		cout << "There are someting wrong with loading the pictures!\n";
 		return false;
 	}
-	//Ê¹ÓÃsurfËã×Ó¼ì²â¹Ø¼üµã
+	
+	//ä½¿ç”¨surfç®—å­æ£€æµ‹å…³é”®ç‚¹
 	int minHessian = 400;
 	SurfFeatureDetector detector(minHessian);
 	vector<KeyPoint> keypoints_object, keypoints_sence;
 	detector.detect(srcImage1, keypoints_object);
 	detector.detect(srcImage2, keypoints_sence);
-	//¼ÆËãÃèÊö·û£¨ÌØÕ÷ÏòÁ¿£©
+	//è®¡ç®—æè¿°ç¬¦ï¼ˆç‰¹å¾å‘é‡ï¼‰
 	Mat descriptors_object, descriptors_sence;
 	SurfDescriptorExtractor extractor;
 	extractor.compute(srcImage1, keypoints_object, descriptors_object);
 	extractor.compute(srcImage2, keypoints_sence, descriptors_sence);
-	//Ê¹ÓÃFLANNËã×Ó½øĞĞÌØÕ÷Æ¥Åä
+	//ä½¿ç”¨FLANNç®—å­è¿›è¡Œç‰¹å¾åŒ¹é…
 	FlannBasedMatcher matcher;
 	vector<DMatch> matches;
 	matcher.match(descriptors_object, descriptors_sence, matches);
-	//¼ÆËã³ö¹Ø¼üµãÖ®¼ä×î´ó¾àÀëºÍ×îĞ¡¾àÀë
+	//è®¡ç®—å‡ºå…³é”®ç‚¹ä¹‹é—´æœ€å¤§è·ç¦»å’Œæœ€å°è·ç¦»
 	double max_dist = 0, min_dist = 100;
 	for (int i = 0; i < descriptors_object.rows; i++){
 		double dist = matches[i].distance;
@@ -36,31 +37,31 @@ int main(){
 		if (dist>max_dist)
 			max_dist = dist;
 	}
-	cout << ">Max dist ×î´ó¾àÀë£º" << max_dist << endl;
-	cout << "Min dist ×îĞ¡¾àÀë£º" << min_dist << endl;
+	cout << ">Max dist æœ€å¤§è·ç¦»ï¼š" << max_dist << endl;
+	cout << "Min dist æœ€å°è·ç¦»ï¼š" << min_dist << endl;
 
-	//´æÏÂÆ¥Åä¾àÀëĞ¡ÓÚ3*min_distµÄµã¶Ô
+	//å­˜ä¸‹åŒ¹é…è·ç¦»å°äº3*min_distçš„ç‚¹å¯¹
 	vector<DMatch> good_matches;
 	for (int i = 0; i < descriptors_object.rows; i++){
 		if (matches[i].distance < 3 * min_dist)
 			good_matches.push_back(matches[i]);
 	}
 
-	//»æÖÆÆ¥Åäµ½µÄ¹Ø¼üµã
+	//ç»˜åˆ¶åŒ¹é…åˆ°çš„å…³é”®ç‚¹
 	Mat img_matches;
 	drawMatches(srcImage1, keypoints_object, srcImage2, keypoints_sence, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
 		vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
 	vector<Point2f> obj;
 	vector<Point2f> sence;
-	//´ÓÆ¥Åä³É¹¦µÄÆ¥Åä¶ÔÖĞ»ñÈ¡¹Ø¼üµã
+	//ä»åŒ¹é…æˆåŠŸçš„åŒ¹é…å¯¹ä¸­è·å–å…³é”®ç‚¹
 	for (size_t i = 0; i < good_matches.size(); i++){
 		obj.push_back(keypoints_object[good_matches[i].queryIdx].pt);
 		sence.push_back(keypoints_sence[good_matches[i].trainIdx].pt);
 	}
 
-	Mat H = findHomography(obj, sence, CV_RANSAC);//¼ÆËãÍ¸ÊÓ±ä»»
-	//´Ó´ı¼ì²âÍ¼Æ¬ÖĞ»ñÈ¡½Çµã
+	Mat H = findHomography(obj, sence, CV_RANSAC);//è®¡ç®—é€è§†å˜æ¢
+	//ä»å¾…æ£€æµ‹å›¾ç‰‡ä¸­è·å–è§’ç‚¹
 	vector<Point2f> obj_corners(4);
 	obj_corners[0] = cvPoint(0, 0);
 	obj_corners[1] = cvPoint(srcImage1.cols, 0);
@@ -68,15 +69,15 @@ int main(){
 	obj_corners[3] = cvPoint(0, srcImage1.rows);
 	vector<Point2f> sence_corner(4);
 
-	//½øĞĞÍ¸ÊÓ±ä»»
+	//è¿›è¡Œé€è§†å˜æ¢
 	perspectiveTransform(obj_corners, sence_corner, H);
-	//»æÖÆ³ö½ÇµãÖ®¼äµÄÖ±Ïß
+	//ç»˜åˆ¶å‡ºè§’ç‚¹ä¹‹é—´çš„ç›´çº¿
 	line(img_matches, sence_corner[0] + Point2f(static_cast<float>(srcImage1.cols), 0), sence_corner[1] + Point2f(static_cast<float>(srcImage1.cols), 0), Scalar(255, 0, 123), 4);
 	line(img_matches, sence_corner[1] + Point2f(static_cast<float>(srcImage1.cols), 0), sence_corner[2] + Point2f(static_cast<float>(srcImage1.cols), 0), Scalar(255, 0, 123), 4);
 	line(img_matches, sence_corner[2] + Point2f(static_cast<float>(srcImage1.cols), 0), sence_corner[3] + Point2f(static_cast<float>(srcImage1.cols), 0), Scalar(255, 0, 123), 4);
 	line(img_matches, sence_corner[3] + Point2f(static_cast<float>(srcImage1.cols), 0), sence_corner[0] + Point2f(static_cast<float>(srcImage1.cols), 0), Scalar(255, 0, 123), 4);
 
-	//ÏÔÊ¾×îÖÕ½á¹û
-	imshow("¡¾Ğ§¹ûÍ¼¡¿", img_matches);
+	//æ˜¾ç¤ºæœ€ç»ˆç»“æœ
+	imshow("ã€æ•ˆæœå›¾ã€‘", img_matches);
 	waitKey(0);
 }
